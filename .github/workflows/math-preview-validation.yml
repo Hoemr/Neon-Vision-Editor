@@ -1,0 +1,33 @@
+name: Math preview validation build
+on:
+  push:
+    branches: [codex/math-preview-build]
+permissions:
+  contents: read
+jobs:
+  macos:
+    runs-on: xcode-27
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build and run math preview tests
+        run: >-
+          xcodebuild -project "Neon Vision Editor.xcodeproj"
+          -scheme "Neon Vision Editor" -destination "platform=macOS"
+          -derivedDataPath "$RUNNER_TEMP/NeonMathBuild"
+          CODE_SIGNING_ALLOWED=NO
+          -only-testing:"Neon Vision EditorTests/MarkdownMathRendererTests"
+          -only-testing:"Neon Vision EditorTests/MarkdownPreviewContentUpdateTests"
+          test
+      - name: Package application
+        if: success()
+        run: >-
+          ditto -c -k --sequesterRsrc --keepParent
+          "$RUNNER_TEMP/NeonMathBuild/Build/Products/Debug/Neon Vision Editor.app"
+          "$RUNNER_TEMP/Neon-Vision-Editor-math-preview.zip"
+      - uses: actions/upload-artifact@v6
+        if: success()
+        with:
+          name: Neon-Vision-Editor-math-preview
+          path: ${{ runner.temp }}/Neon-Vision-Editor-math-preview.zip
+          retention-days: 7
