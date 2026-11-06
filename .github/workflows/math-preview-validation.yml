@@ -1,4 +1,4 @@
-name: Math preview installation build
+name: Embedded math font validation
 on:
   push:
     branches: [codex/math-preview-build]
@@ -10,18 +10,20 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v5
-      - name: Build optimized direct-distribution application
+      - name: Run math and embedded font tests
         run: >-
           xcodebuild -project "Neon Vision Editor.xcodeproj"
-          -scheme "Neon Vision Editor" -configuration Release-GitHub -destination "platform=macOS"
+          -scheme "Neon Vision Editor" -destination "platform=macOS"
           -derivedDataPath "$RUNNER_TEMP/NeonMathBuild"
           CODE_SIGNING_ALLOWED=NO
-          build
+          -only-testing:"Neon Vision EditorTests/MarkdownMathRendererTests"
+          -only-testing:"Neon Vision EditorTests/MarkdownPreviewContentUpdateTests"
+          test
       - name: Package application
         if: success()
         run: >-
           ditto -c -k --sequesterRsrc --keepParent
-          "$RUNNER_TEMP/NeonMathBuild/Build/Products/Release-GitHub/Neon Vision Editor.app"
+          "$RUNNER_TEMP/NeonMathBuild/Build/Products/Debug/Neon Vision Editor.app"
           "$RUNNER_TEMP/Neon-Vision-Editor-math-preview.zip"
       - uses: actions/upload-artifact@v6
         if: success()
